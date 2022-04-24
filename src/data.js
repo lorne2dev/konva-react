@@ -1,4 +1,4 @@
-const points = [
+const data = [
   {
     x: 95,
     y: 50,
@@ -21,4 +21,4 @@ const points = [
   },
 ];
 
-export default points;
+export default data;
