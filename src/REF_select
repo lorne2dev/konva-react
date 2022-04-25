@@ -1,3 +1,5 @@
+// REF: https://codesandbox.io/s/7fct5?file=/src/App.js:388-428
+
 import Konva from 'konva';
 import React from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
