@@ -1,3 +1,8 @@
+https://codesandbox.io/s/7fct5?file=/src/App.js:388-428.
+https://codesandbox.io/s/react-konva-multiple-selection-tgggi.
+https://colinwren.medium.com/adding-drag-to-select-to-your-konva-app-with-react-1fb62059d0c4.
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
