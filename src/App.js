@@ -7,16 +7,16 @@ import data from "./data";
 const MOUSEONE = 0; // left mouse button
 const MOUSETWO = 2; // right mouse button
 const MOUSETHREE = 1; // middle mouse button
-const RADIUS = 6;
+const POINT_SIZE = 10; // diameter of circle
+
 let points = [];
 for (let i = 0; i < data.length; i++) {
     points.push({
-        id: i,
-        x: data[i].x,
-        y: data[i].y,
-        radius: RADIUS,
-        height: RADIUS,
-        width: RADIUS,
+        id: i + 4,
+        x: data[i].x - POINT_SIZE / 2,
+        y: data[i].y - POINT_SIZE / 2,
+        height: POINT_SIZE,
+        width: POINT_SIZE,
         selected: false,
     });
 }
@@ -60,12 +60,6 @@ function App() {
         return state.points.filter((point) => point.selected);
     };
 
-    const getPointById = (id) => {
-        return state.points.find((point) => {
-            return point.id === id;
-        });
-    };
-
     const deleteButtonHandler = () => {
         const newState = {
             ...state,
@@ -95,16 +89,24 @@ function App() {
         });
     };
 
+    const getPointById = (id) => {
+        return state.points.find((point) => point.id === id);
+    };
+
     const mouseDown = (e) => {
         const stage = stageRef.current;
         const { target } = e;
         if (e.evt.button === MOUSEONE || e.evt.button === MOUSETWO) {
             if (target.name() === "circle") {
-                const point = getPointById(target.index);
+                const point = getPointById(target._id);
                 deselectAllPoints();
                 selectPoints([point.id]);
             }
-            if (e.evt.button === MOUSEONE && e.target.name() === "background") {
+            if (
+                (e.evt.button === MOUSEONE &&
+                    e.target.name() === "background") ||
+                e.target.name() === "circle"
+            ) {
                 deselectAllPoints();
                 const { x, y } = calculateOffset(
                     stage.getPointerPosition().x,
@@ -192,13 +194,15 @@ function App() {
                     {state.points.map((point) => (
                         <Circle
                             key={point.id}
-                            x={point.x}
-                            y={point.y}
+                            x={point.x + POINT_SIZE / 2}
+                            y={point.y + POINT_SIZE / 2}
                             stroke={point.selected ? "#fff" : "#00ffff"}
-                            radius={point.radius}
+                            radius={point.height / 2}
                             name="circle"
                         />
                     ))}
+                </Layer>
+                <Layer>
                     {state.selection.visible && (
                         <Rect
                             name="selection"
