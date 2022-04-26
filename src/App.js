@@ -12,7 +12,7 @@ const POINT_SIZE = 10; // diameter of circle
 let points = [];
 for (let i = 0; i < data.length; i++) {
     points.push({
-        id: i + 4,
+        id: i.toString(),
         x: data[i].x - POINT_SIZE / 2,
         y: data[i].y - POINT_SIZE / 2,
         height: POINT_SIZE,
@@ -98,7 +98,7 @@ function App() {
         const { target } = e;
         if (e.evt.button === MOUSEONE || e.evt.button === MOUSETWO) {
             if (target.name() === "circle") {
-                const point = getPointById(target._id);
+                const point = getPointById(target.id());
                 deselectAllPoints();
                 selectPoints([point.id]);
             }
@@ -194,6 +194,7 @@ function App() {
                     {state.points.map((point) => (
                         <Circle
                             key={point.id}
+                            id={point.id}
                             x={point.x + POINT_SIZE / 2}
                             y={point.y + POINT_SIZE / 2}
                             stroke={point.selected ? "#fff" : "#00ffff"}
