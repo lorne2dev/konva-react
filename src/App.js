@@ -9,7 +9,7 @@ const MOUSETWO = 2; // right mouse button
 const MOUSETHREE = 1; // middle mouse button
 const POINT_SIZE = 10; // diameter of circle
 
-let points = [];
+const points = [];
 for (let i = 0; i < data.length; i++) {
     points.push({
         id: i.toString(),
@@ -60,23 +60,14 @@ function App() {
         return state.points.filter((point) => point.selected);
     };
 
-    const deleteButtonHandler = () => {
-        const newState = {
-            ...state,
-            points: state.points.filter((point) => !point.selected),
-        };
-        setState(newState);
-    };
-
-    const deselectAllPoints = () => {
-        const deselectedPoints = [];
-        state.points.forEach((point) => {
+    const deselectAllPoints = (theState) => {
+        const newPoints = theState.points.map((point) => {
             point.selected = false;
-            deselectedPoints.push(point);
+            return point;
         });
         const newState = {
-            ...state,
-            points: deselectedPoints,
+            ...theState,
+            points: newPoints,
         };
         setState(newState);
     };
@@ -89,6 +80,18 @@ function App() {
         });
     };
 
+    const deleteButtonHandler = () => {
+        const newState = {
+            ...state,
+            points: state.points.filter((point) => !point.selected),
+        };
+        setState(newState);
+    };
+
+    const resetButtonHandler = () => {
+        deselectAllPoints(initialiseState);
+    };
+
     const getPointById = (id) => {
         return state.points.find((point) => point.id === id);
     };
@@ -99,7 +102,7 @@ function App() {
         if (e.evt.button === MOUSEONE || e.evt.button === MOUSETWO) {
             if (target.name() === "circle") {
                 const point = getPointById(target.id());
-                deselectAllPoints();
+                deselectAllPoints(state);
                 selectPoints([point.id]);
             }
             if (
@@ -107,7 +110,7 @@ function App() {
                     e.target.name() === "background") ||
                 e.target.name() === "circle"
             ) {
-                deselectAllPoints();
+                deselectAllPoints(state);
                 const { x, y } = calculateOffset(
                     stage.getPointerPosition().x,
                     stage.getPointerPosition().y
@@ -163,7 +166,7 @@ function App() {
             const selected = state.points.filter((point) => {
                 return Konva.Util.haveIntersection(selectionBox, point);
             });
-            deselectAllPoints();
+            deselectAllPoints(state);
             selectPoints(selected.map((a) => a.id));
             setState(newState);
         }
@@ -173,6 +176,9 @@ function App() {
         <>
             <StyledButton id="delete-btn" onClick={deleteButtonHandler}>
                 Delete
+            </StyledButton>
+            <StyledButton id="reset-btn" onClick={resetButtonHandler}>
+                Reset
             </StyledButton>
             <Stage
                 width={window.innerWidth}
