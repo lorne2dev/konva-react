@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React from "react";
 import Konva from "konva";
 import { Stage, Layer, Rect, Circle } from "react-konva";
 import StyledButton from "./StyledButton";
@@ -9,117 +9,109 @@ const MOUSE_MIDDLE_BTN = 1;
 const MOUSE_RIGHT_BTN = 2;
 const POINT_SIZE = 10; // diameter of circle
 
-const points = [];
-for (let i = 0; i < data.length; i++) {
-    points.push({
-        id: i.toString(),
-        x: data[i].x - POINT_SIZE / 2,
-        y: data[i].y - POINT_SIZE / 2,
-        height: POINT_SIZE,
-        width: POINT_SIZE,
-        selected: false,
-    });
-}
+class CrossSectionViewer extends React.Component {
+    constructor(props) {
+        super(props);
+        this.stage = React.createRef();
+        const points = [];
+        for (let i = 0; i < data.length; i++) {
+            points.push({
+                id: i.toString(),
+                x: data[i].x - POINT_SIZE / 2,
+                y: data[i].y - POINT_SIZE / 2,
+                height: POINT_SIZE,
+                width: POINT_SIZE,
+                selected: false,
+            });
+        }
+        this.state = {
+            points,
+            drag: false,
+            pan: false,
+            stageOffset: {
+                x: 0,
+                y: 0,
+            },
+            selection: {
+                visible: false,
+                x1: null,
+                y1: null,
+                x2: null,
+                y2: null,
+            },
+        };
+    }
 
-const initialiseState = {
-    points,
-    pan: false,
-    stageOffset: {
-        x: 0,
-        y: 0,
-    },
-    selection: {
-        visible: false,
-        x1: null,
-        y1: null,
-        x2: null,
-        y2: null,
-    },
-};
-
-function App() {
-    const [state, setState] = useState(initialiseState);
-    const [mouseDragIcon, setMouseDragIcon] = useState(false);
-    const stageRef = useRef(null);
-
-    const calculateOffset = (x, y) => {
+    calculateOffset = (x, y) => {
         return {
-            x: x - state.stageOffset.x,
-            y: y - state.stageOffset.y,
+            x: x - this.state.stageOffset.x,
+            y: y - this.state.stageOffset.y,
         };
     };
 
-    const generateSelectionBox = () => {
+    generateSelectionBox = () => {
         return {
-            x: Math.min(state.selection.x1, state.selection.x2),
-            y: Math.min(state.selection.y1, state.selection.y2),
-            height: Math.abs(state.selection.y2 - state.selection.y1),
-            width: Math.abs(state.selection.x2 - state.selection.x1),
+            x: Math.min(this.state.selection.x1, this.state.selection.x2),
+            y: Math.min(this.state.selection.y1, this.state.selection.y2),
+            height: Math.abs(this.state.selection.y2 - this.state.selection.y1),
+            width: Math.abs(this.state.selection.x2 - this.state.selection.x1),
         };
     };
 
-    const getSelectedPoints = () => {
-        return state.points.filter((point) => point.selected);
+    getSelectedPoints = () => {
+        return this.state.points.filter((point) => point.selected);
     };
 
-    const deselectAllPoints = (theState) => {
+    deselectAllPoints = (theState) => {
         const newPoints = theState.points.map((point) => {
             point.selected = false;
             return point;
         });
-        const newState = {
-            ...theState,
-            points: newPoints,
-        };
-        setState(newState);
+        this.setState({ points: newPoints });
     };
 
-    const selectPoints = (ids) => {
-        state.points.forEach((point) => {
+    selectPoints = (ids) => {
+        this.state.points.forEach((point) => {
             if (ids.includes(point.id)) {
                 point.selected = true;
             }
         });
     };
 
-    const deleteButtonHandler = () => {
-        const newState = {
-            ...state,
-            points: state.points.filter((point) => !point.selected),
-        };
-        setState(newState);
+    deleteButtonHandler = () => {
+        this.setState({
+            points: this.state.points.filter((point) => !point.selected),
+        });
     };
 
-    const resetButtonHandler = () => {
-        deselectAllPoints(initialiseState);
+    resetButtonHandler = () => {
+        this.deselectAllPoints(this.state);
     };
 
-    const getPointById = (id) => {
-        return state.points.find((point) => point.id === id);
+    getPointById = (id) => {
+        return this.state.points.find((point) => point.id === id);
     };
 
-    const mouseDown = (e) => {
-        const stage = stageRef.current;
-        let newState = state;
+    mouseDown = (e) => {
+        const stage = this.stage.current;
         const { target } = e;
         if (e.evt.button === MOUSE_LEFT_BTN) {
             if (target.name() === "circle") {
-                const point = getPointById(target.id());
-                deselectAllPoints(state);
-                selectPoints([point.id]);
+                const point = this.getPointById(target.id());
+                this.deselectAllPoints(this.state);
+                this.selectPoints([point.id]);
             }
             if (
                 (e.evt.button === MOUSE_LEFT_BTN &&
                     e.target.name() === "background") ||
                 e.target.name() === "circle"
             ) {
-                deselectAllPoints(state);
-                const { x, y } = calculateOffset(
+                this.deselectAllPoints(this.state);
+                const { x, y } = this.calculateOffset(
                     stage.getPointerPosition().x,
                     stage.getPointerPosition().y
                 );
-                newState = {
-                    ...state,
+                this.setState({
                     pan: false,
                     selection: {
                         visible: true,
@@ -128,71 +120,67 @@ function App() {
                         x2: x,
                         y2: y,
                     },
-                };
-                setState(newState);
+                });
             }
         }
         if (e.evt.button === MOUSE_MIDDLE_BTN) {
             e.evt.preventDefault();
-            newState = {
-                ...state,
+            this.setState({
+                drag: true,
                 pan: true,
-            };
+            });
         }
         if (e.evt.button === MOUSE_RIGHT_BTN) {
             e.evt.preventDefault();
-            newState = {
-                ...newState,
+            this.setState({
                 pan: false,
-            };
+            });
         }
-        setState(newState);
-        setMouseDragIcon(true);
     };
 
-    const mouseMove = () => {
-        const stage = stageRef.current;
-        if (!state.selection.visible) {
+    mouseMove = () => {
+        const stage = this.stage.current;
+        if (!this.state.selection.visible) {
             return;
         }
-        const { x, y } = calculateOffset(
+        const { x, y } = this.calculateOffset(
             stage.getPointerPosition().x,
             stage.getPointerPosition().y
         );
-        const newState = {
-            ...state,
+        this.setState({
             selection: {
-                ...state.selection,
+                ...this.state.selection,
                 x2: x,
                 y2: y,
             },
-        };
-        setState(newState);
+        });
     };
 
-    const mouseUp = () => {
-        if (state.selection.visible) {
-            const newState = {
-                ...state,
-                selection: {
-                    ...state.selection,
-                    visible: false,
-                },
-            };
-            const selectionBox = generateSelectionBox();
-            const selected = state.points.filter((point) => {
+    mouseUp = () => {
+        if (this.state.selection.visible) {
+            const selectionBox = this.generateSelectionBox();
+            const selected = this.state.points.filter((point) => {
                 return Konva.Util.haveIntersection(selectionBox, point);
             });
-            deselectAllPoints(state);
-            selectPoints(selected.map((a) => a.id));
-            setState(newState);
+            this.deselectAllPoints(this.state);
+            this.selectPoints(selected.map((a) => a.id));
+            this.setState({
+                selection: {
+                    ...this.state.selection,
+                    visible: false,
+                },
+            });
         }
-        setMouseDragIcon(false);
+        this.setState({
+            drag: false,
+        });
     };
 
-    const getPanningState = () => {
-        if (state.pan) {
-            if (mouseDragIcon) {
+    onClick = (e) => {};
+
+    getPanningState = () => {
+        if (this.state.pan) {
+            if (this.state.drag) {
                 return "grabbing";
             }
             return "grab";
@@ -200,66 +188,99 @@ function App() {
         return "default";
     };
 
-    return (
-        <div style={{ cursor: getPanningState() }}>
-            <StyledButton id="delete-btn" onClick={deleteButtonHandler}>
-                Delete
-            </StyledButton>
-            <StyledButton id="reset-btn" onClick={resetButtonHandler}>
-                Reset
-            </StyledButton>
-            <Stage
-                width={window.innerWidth}
-                height={window.innerHeight}
-                ref={stageRef}
-                onMouseDown={mouseDown}
-                onMouseMove={mouseMove}
-                onMouseUp={mouseUp}
-                draggable={state.pan}
-            >
-                <Layer>
-                    <Rect
-                        width={800}
-                        height={600}
-                        fill="#222"
-                        name="background"
-                    />
-                </Layer>
-                <Layer>
-                    {state.points.map((point) => (
-                        <Circle
-                            key={point.id}
-                            id={point.id}
-                            x={point.x + POINT_SIZE / 2}
-                            y={point.y + POINT_SIZE / 2}
-                            stroke={point.selected ? "#fff" : "#00ffff"}
-                            radius={point.height / 2}
-                            name="circle"
-                        />
-                    ))}
-                </Layer>
-                <Layer>
-                    {state.selection.visible && (
+    onStageDrag = (e) => {
+        if (this.state.grab) {
+            this.setState({
+                stageOffset: {
+                    x: e.target.x(),
+                    y: e.target.y(),
+                },
+            });
+        }
+    };
+
+    onStageDragEnd = (e) => {
+        if (this.state.pan) {
+            this.setState({ grab: false });
+        }
+    };
+
+    render() {
+        return (
+            <div style={{ cursor: this.getPanningState() }}>
+                <StyledButton
+                    id="delete-btn"
+                    onClick={this.deleteButtonHandler}
+                >
+                    Delete
+                </StyledButton>
+                <StyledButton id="reset-btn" onClick={this.resetButtonHandler}>
+                    Reset
+                </StyledButton>
+                <Stage
+                    width={window.innerWidth}
+                    height={window.innerHeight}
+                    ref={this.stage}
+                    onClick={this.onClick}
+                    onMouseDown={this.mouseDown}
+                    onMouseMove={this.mouseMove}
+                    onMouseUp={this.mouseUp}
+                    draggable={this.state.pan}
+                    onDragMove={this.onStageDrag}
+                    onDragEnd={this.onStageDragEnd}
+                >
+                    <Layer>
                         <Rect
-                            name="selection"
-                            x={Math.min(state.selection.x1, state.selection.x2)}
-                            y={Math.min(state.selection.y1, state.selection.y2)}
-                            height={Math.abs(
-                                state.selection.y2 - state.selection.y1
-                            )}
-                            width={Math.abs(
-                                state.selection.x2 - state.selection.x1
-                            )}
-                            fill="teal"
-                            opacity={0.8}
-                            strokeWidth={1}
-                            stroke="blue"
+                            width={800}
+                            height={600}
+                            fill="#222"
+                            name="background"
                         />
-                    )}
-                </Layer>
-            </Stage>
-        </div>
-    );
+                    </Layer>
+                    <Layer>
+                        {this.state.points.map((point) => (
+                            <Circle
+                                key={point.id}
+                                id={point.id}
+                                x={point.x + POINT_SIZE / 2}
+                                y={point.y + POINT_SIZE / 2}
+                                stroke={point.selected ? "#fff" : "#00ffff"}
+                                radius={point.height / 2}
+                                name="circle"
+                            />
+                        ))}
+                    </Layer>
+                    <Layer>
+                        {this.state.selection.visible && (
+                            <Rect
+                                name="selection"
+                                x={Math.min(
+                                    this.state.selection.x1,
+                                    this.state.selection.x2
+                                )}
+                                y={Math.min(
+                                    this.state.selection.y1,
+                                    this.state.selection.y2
+                                )}
+                                height={Math.abs(
+                                    this.state.selection.y2 -
+                                        this.state.selection.y1
+                                )}
+                                width={Math.abs(
+                                    this.state.selection.x2 -
+                                        this.state.selection.x1
+                                )}
+                                fill="teal"
+                                opacity={0.8}
+                                strokeWidth={1}
+                                stroke="blue"
+                            />
+                        )}
+                    </Layer>
+                </Stage>
+            </div>
+        );
+    }
 }
 
-export default App;
+export default CrossSectionViewer;
