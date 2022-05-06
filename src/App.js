@@ -4,9 +4,9 @@ import { Stage, Layer, Rect, Circle } from "react-konva";
 import StyledButton from "./StyledButton";
 import data from "./data";
 
-const MOUSEONE = 0; // left mouse button
-const MOUSETWO = 2; // right mouse button
-const MOUSETHREE = 1; // middle mouse button
+const MOUSE_LEFT_BTN = 0;
+const MOUSE_MIDDLE_BTN = 1;
+const MOUSE_RIGHT_BTN = 2;
 const POINT_SIZE = 10; // diameter of circle
 
 const points = [];
@@ -23,6 +23,7 @@ for (let i = 0; i < data.length; i++) {
 
 const initialiseState = {
     points,
+    pan: false,
     stageOffset: {
         x: 0,
         y: 0,
@@ -38,6 +39,7 @@ const initialiseState = {
 
 function App() {
     const [state, setState] = useState(initialiseState);
+    const [mouseDragIcon, setMouseDragIcon] = useState(false);
     const stageRef = useRef(null);
 
     const calculateOffset = (x, y) => {
@@ -98,15 +100,16 @@ function App() {
 
     const mouseDown = (e) => {
         const stage = stageRef.current;
+        let newState = state;
         const { target } = e;
-        if (e.evt.button === MOUSEONE || e.evt.button === MOUSETWO) {
+        if (e.evt.button === MOUSE_LEFT_BTN) {
             if (target.name() === "circle") {
                 const point = getPointById(target.id());
                 deselectAllPoints(state);
                 selectPoints([point.id]);
             }
             if (
-                (e.evt.button === MOUSEONE &&
+                (e.evt.button === MOUSE_LEFT_BTN &&
                     e.target.name() === "background") ||
                 e.target.name() === "circle"
             ) {
@@ -115,8 +118,9 @@ function App() {
                     stage.getPointerPosition().x,
                     stage.getPointerPosition().y
                 );
-                const newState = {
+                newState = {
                     ...state,
+                    pan: false,
                     selection: {
                         visible: true,
                         x1: x,
@@ -128,9 +132,22 @@ function App() {
                 setState(newState);
             }
         }
-        if (e.evt.button === MOUSETHREE) {
+        if (e.evt.button === MOUSE_MIDDLE_BTN) {
             e.evt.preventDefault();
+            newState = {
+                ...state,
+                pan: true,
+            };
         }
+        if (e.evt.button === MOUSE_RIGHT_BTN) {
+            e.evt.preventDefault();
+            newState = {
+                ...newState,
+                pan: false,
+            };
+        }
+        setState(newState);
+        setMouseDragIcon(true);
     };
 
     const mouseMove = () => {
@@ -170,10 +187,21 @@ function App() {
             selectPoints(selected.map((a) => a.id));
             setState(newState);
         }
+        setMouseDragIcon(false);
+    };
+
+    const getPanningState = () => {
+        if (state.pan) {
+            if (mouseDragIcon) {
+                return "grabbing";
+            }
+            return "grab";
+        }
+        return "default";
     };
 
     return (
-        <>
+        <div style={{ cursor: getPanningState() }}>
             <StyledButton id="delete-btn" onClick={deleteButtonHandler}>
                 Delete
             </StyledButton>
@@ -187,6 +215,7 @@ function App() {
                 onMouseDown={mouseDown}
                 onMouseMove={mouseMove}
                 onMouseUp={mouseUp}
+                draggable={state.pan}
             >
                 <Layer>
                     <Rect
@@ -229,7 +258,7 @@ function App() {
                     )}
                 </Layer>
             </Stage>
-        </>
+        </div>
     );
 }
 
